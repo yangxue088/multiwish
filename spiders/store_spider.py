@@ -18,18 +18,18 @@ class StoreSpider(RedisSpider):
         'http://www.wish.com/',
     )
 
+    merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
     def __init__(self, username, password, redis_key='merchants', product_rating_count=1000, product_rating_score=4.0,
                  product_rating_min_count=100,
                  ajaxcount=200):
         self.username = username
         self.password = password
         self.redis_key = redis_key
-        self.merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
         self.rating_count = product_rating_count
         self.rating_score = product_rating_score
         self.rating_min_count = product_rating_min_count
         self.ajaxcount = ajaxcount
-        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
         self.logon = False
         self.xsrf = ''
 
@@ -59,11 +59,10 @@ class StoreSpider(RedisSpider):
         self.log('store spider login success.', logging.INFO)
 
     def next_request(self):
-        request = super(StoreSpider, self).next_request()
-        if request is not None and self.merchants.add(request.url):
-            return self.next_request()
-        else:
-            return request
+        while True:
+            request = super(StoreSpider, self).next_request()
+            if request is not None and not StoreSpider.merchants.add(request.url):
+                return request
 
     def parse(self, response):
         while not self.logon:

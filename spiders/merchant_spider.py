@@ -61,12 +61,10 @@ class MerchantSpider(RedisSpider):
         self.log('merchant spider login success.', logging.INFO)
 
     def next_request(self):
-        request = super(MerchantSpider, self).next_request()
-
-        if request is not None and self.urls.add(request.url):
-            return self.next_request()
-        else:
-            return request
+        while True:
+            request = super(MerchantSpider, self).next_request()
+            if request is not None and not MerchantSpider.urls.add(request.url):
+                return request
 
     def parse(self, response):
         while not self.logon:
