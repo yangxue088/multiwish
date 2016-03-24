@@ -21,10 +21,10 @@ class DupePipeline(object):
 
     def process_item(self, item, spider):
         if item is None or item['url'] is None:
-            raise DropItem("none item found.")
+            raise DropItem("none item found, for:{}".format(spider.name))
         else:
             if DupePipeline.urls.add(spider.name + item['url']):
-                raise DropItem('duplicate item found')
+                raise DropItem('duplicate item found, for:{}'.format(spider.name))
             else:
                 return item
 
