@@ -20,11 +20,13 @@ class DupePipeline(object):
     urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def process_item(self, item, spider):
-        if item is None or item['url'] is None or item['url'] in DupePipeline.urls:
-            raise DropItem("Duplicate item found.")
+        if item is None or item['url'] is None:
+            raise DropItem("none item found.")
         else:
-            DupePipeline.urls.add(item['url'])
-            return item
+            if DupePipeline.urls.add(spider.name + item['url']):
+                raise DropItem('duplicate item found')
+            else:
+                return item
 
 class ToRedisPipeline(RedisPipeline):
 
