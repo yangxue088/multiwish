@@ -69,7 +69,7 @@ class StoreSpider(RedisSpider):
         while not self.logon:
             yield
 
-        self.log('store spider parse response.', logging.INFO)
+        self.log('store spider parse response:{}'.format(response.url), logging.INFO)
 
         xscript = response.xpath('//script')
         next_offset = xscript.re_first("\['next_offset'\] = (.*?);")
@@ -136,7 +136,7 @@ class StoreSpider(RedisSpider):
                               }, meta={'merchant_name': merchant_name}, callback=self.parse_merchant_ajax)
 
     def parse_merchant_ajax(self, response):
-        self.log('store spider parse reponse', logging.INFO)
+        self.log('store spider parse reponse:{}'.format(response.url), logging.INFO)
 
         json_data = json.loads(response.body)
         data = json_data.get('data', None)
