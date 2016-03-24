@@ -16,14 +16,14 @@ from spiders.merchant_spider import MerchantSpider
 from spiders.product_spider import ProductSpider
 
 class DupePipeline(object):
-    def __init__(self):
-        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
+    urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def process_item(self, item, spider):
-        if item is None or item['url'] is None or item['url'] in self.urls:
+        if item is None or item['url'] is None or item['url'] in DupePipeline.urls:
             raise DropItem("Duplicate item found.")
         else:
-            self.urls.add(item['url'])
+            DupePipeline.urls.add(item['url'])
             return item
 
 class ToRedisPipeline(RedisPipeline):
@@ -33,7 +33,7 @@ class ToRedisPipeline(RedisPipeline):
             self.server.rpush('{}:url'.format(ProductSpider.name), item['url'])
         elif isinstance(item, MerchantItem):
             self.server.rpush('{}:url'.format(MerchantSpider.name), item['url'])
-            self.server.rpush('excellent:merchant', item['url'])
+            self.server.rpush('excellent:merchant', self.encoder.encode(item))
         elif isinstance(item, ExcellentProductItem):
             self.server.rpush('excellent:product', item['url'])
         else:

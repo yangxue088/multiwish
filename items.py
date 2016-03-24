@@ -22,6 +22,8 @@ class MerchantItem(scrapy.Item):
 
     url = scrapy.Field()
 
+    name = scrapy.Field()
+
 
 class ExcellentProductItem(scrapy.Item):
     # define the fields for your item here like:
@@ -29,4 +31,4 @@ class ExcellentProductItem(scrapy.Item):
 
     url = scrapy.Field()
 
-
+    merchant = scrapy.Field()

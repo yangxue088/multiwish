@@ -107,6 +107,7 @@ class StoreSpider(RedisSpider):
                              logging.INFO)
                     item = items.ExcellentProductItem()
                     item['url'] = url
+                    item['merchant'] = merchant_name
                     yield item
 
             if len(ids) > 0:
@@ -166,8 +167,9 @@ class StoreSpider(RedisSpider):
                                                                                          product_rating['rating'],
                                                                                          merchant_name),
                              logging.INFO)
-                    item = items.WishItem()
+                    item = items.ExcellentProductItem()
                     item['url'] = url
+                    item['merchant'] = merchant_name
                     yield item
 
             if len(ids) > 0:

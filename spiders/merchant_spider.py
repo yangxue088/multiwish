@@ -18,18 +18,20 @@ class MerchantSpider(RedisSpider):
         'http://www.wish.com/',
     )
 
+    merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
+    urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
     def __init__(self, username, password, redis_key='products', merchant_rating_count=10000, merchant_rating_score=4.0,
                  product_similar_max=1000,
                  ajaxcount=200):
         self.username = username
         self.password = password
         self.redis_key = redis_key
-        self.merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
         self.rating_count = merchant_rating_count
         self.rating_score = merchant_rating_score
         self.similar_max = product_similar_max
         self.ajaxcount = ajaxcount
-        self.urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
         self.logon = False
         self.xsrf = ''
 
@@ -78,18 +80,18 @@ class MerchantSpider(RedisSpider):
         if merchant_name.startswith('\u'):
             merchant_name = eval("'" + merchant_name.decode('unicode-escape') + "'")
 
-        if merchant_name not in self.merchants:
-            self.merchants.add(merchant_name)
-
-            if int(merchant_rating_count) >= self.rating_count and float(merchant_rating) >= self.rating_score:
-                self.log(
-                    'found merchant:{}, count:{}, rating:{}'.format(merchant_name, merchant_rating_count,
-                                                                    merchant_rating),
-                    logging.INFO)
-                merchant_url = "https://www.wish.com/merchant/%s" % quote(merchant_name)
-                item = items.MerchantItem()
-                item['url'] = merchant_url
-                yield item
+        if not MerchantSpider.merchants.add(merchant_name) and int(
+                merchant_rating_count) >= self.rating_count and float(
+                merchant_rating) >= self.rating_score:
+            self.log(
+                'found merchant:{}, count:{}, rating:{}'.format(merchant_name, merchant_rating_count,
+                                                                merchant_rating),
+                logging.INFO)
+            merchant_url = "https://www.wish.com/merchant/%s" % quote(merchant_name)
+            item = items.MerchantItem()
+            item['url'] = merchant_url
+            item['name'] = merchant_name
+            yield item
 
         contest_id = response.url.split(r'/')[-1]
         yield self.feed_similar_ajax(contest_id)
@@ -127,15 +129,18 @@ class MerchantSpider(RedisSpider):
             products = data.get('items', [])
 
             for url in (product.get('external_url') for product in products if
-                        product.get('external_url') not in self.urls):
+                        product.get('external_url') not in MerchantSpider.urls):
                 # self.log('put back to product url:{}'.format(url), logging.INFO)
 
-                self.urls.add(url)
+                MerchantSpider.urls.add(url)
                 item = items.ProductItem()
                 item['url'] = url
                 yield item
 
-            if int(next_offset) >= self.similar_max:
+                feed_ended = True
+                break
+
+            if not feed_ended and int(next_offset) >= self.similar_max:
                 feed_ended = True
 
             if not feed_ended:
