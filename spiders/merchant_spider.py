@@ -23,7 +23,7 @@ class MerchantSpider(RedisSpider):
     urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def __init__(self, username, password, redis_key='products', merchant_rating_count=10000, merchant_rating_score=4.0,
-                 product_similar_max=1000,
+                 product_similar_max=1000, product_similar_rating_score=4.0, product_similar_rating_count=1000,
                  ajaxcount=200):
         self.username = username
         self.password = password
@@ -31,6 +31,8 @@ class MerchantSpider(RedisSpider):
         self.rating_count = merchant_rating_count
         self.rating_score = merchant_rating_score
         self.similar_max = product_similar_max
+        self.similar_rating_count = product_similar_rating_count
+        self.similar_rating_score = product_similar_rating_score
         self.ajaxcount = ajaxcount
         self.logon = False
         self.xsrf = ''
@@ -61,10 +63,9 @@ class MerchantSpider(RedisSpider):
         self.log('merchant spider login success.', logging.INFO)
 
     def next_request(self):
-        while True:
-            request = super(MerchantSpider, self).next_request()
-            if request is not None and not MerchantSpider.urls.add(request.url):
-                return request
+        request = super(MerchantSpider, self).next_request()
+        if request is not None and not MerchantSpider.urls.add(request.url):
+            return request
 
     def parse(self, response):
         while not self.logon:
@@ -80,7 +81,7 @@ class MerchantSpider(RedisSpider):
 
         if not MerchantSpider.merchants.add(merchant_name) and int(
                 merchant_rating_count) >= self.rating_count and float(
-                merchant_rating) >= self.rating_score:
+            merchant_rating) >= self.rating_score:
             self.log(
                 'found merchant:{}, count:{}, rating:{}'.format(merchant_name, merchant_rating_count,
                                                                 merchant_rating),
@@ -127,10 +128,11 @@ class MerchantSpider(RedisSpider):
             products = data.get('items', [])
 
             for url in (product.get('external_url') for product in products if
-                        product.get('external_url') not in MerchantSpider.urls):
+                        not MerchantSpider.urls.add(product.get('external_url')) and product.get('product_rating').get(
+                            'rating_count') >= self.similar_rating_count and product.get('product_rating').get(
+                            'rating') >= self.similar_rating_score):
                 # self.log('put back to product url:{}'.format(url), logging.INFO)
 
-                MerchantSpider.urls.add(url)
                 item = items.ProductItem()
                 item['url'] = url
                 yield item
