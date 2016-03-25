@@ -16,6 +16,8 @@ class ProductSpider(scrapy.Spider):
         'http://www.wish.com/',
     )
 
+    urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
+
     def __init__(self, username, password, ajaxcount=100, tabs=None):
         if not tabs:
             tabs = {}
@@ -96,8 +98,8 @@ class ProductSpider(scrapy.Spider):
             no_more_items = data.get('no_more_items', True)
             products = data.get('products', [])
 
-            for product in products:
-                url = product.get('external_url')
+            for url in (product.get('external_url') for product in products if
+                        not ProductSpider.urls.add(product.get('external_url'))):
                 item = items.ProductItem()
                 item['url'] = url
                 yield item
