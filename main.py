@@ -15,10 +15,13 @@ ajaxcount = 200
 process = CrawlerProcess({'ITEM_PIPELINES': {
     'pipelines.DupePipeline': 300,
     'pipelines.ToRedisPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish'})
+}, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish', 'CONCURRENT_REQUESTS': '32'})
 
+
+process.crawl(ProductSpider, username=username, password=password, ajaxcount=66,
+              tabs={'Latest': 'tabbed_feed_latest'})
 process.crawl(ProductSpider, username=username, password=password, ajaxcount=ajaxcount,
-              tabs={'Latest': 'tabbed_feed_latest', 'Recently Viewed': 'recently_viewed__tab',
+              tabs={'Recently Viewed': 'recently_viewed__tab',
                     'Accessories': 'tag_53dc186421a86318bdc87f16', 'Hobbies': 'tag_54ac6e18f8a0b3724c6c473f',
                     })
 process.crawl(ProductSpider, username=username, password=password, ajaxcount=ajaxcount,
@@ -36,7 +39,7 @@ process.crawl(ProductSpider, username=username, password=password, ajaxcount=aja
 #
 # crawl excellent merchant
 #
-for i in range(0, 10):
+for i in range(0, 20):
     process.crawl(MerchantSpider, username=username, password=password, redis_key='{}:url'.format(ProductSpider.name),
                   merchant_rating_count=10000, merchant_rating_score=4.0, product_similar_max=1000,
                   product_similar_rating_score=4.0, product_similar_rating_count=500,

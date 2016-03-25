@@ -5,6 +5,7 @@ from urllib import quote, urlencode
 
 import re
 import scrapy
+from pybloom import ScalableBloomFilter
 
 import items
 
