@@ -39,9 +39,9 @@ process.crawl(ProductSpider, username=username, password=password, ajaxcount=aja
 #
 # crawl excellent merchant
 #
-for i in range(0, 20):
+for i in range(0, 100):
     process.crawl(MerchantSpider, username=username, password=password, redis_key='{}:url'.format(ProductSpider.name),
-                  merchant_rating_count=10000, merchant_rating_score=4.0, product_similar_max=1000,
+                  merchant_rating_count=10000, merchant_rating_score=4.0, product_similar_max=0,
                   product_similar_rating_score=4.0, product_similar_rating_count=500,
                   ajaxcount=ajaxcount)
 

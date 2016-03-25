@@ -92,8 +92,9 @@ class MerchantSpider(RedisSpider):
             item['name'] = merchant_name
             yield item
 
-        contest_id = response.url.split(r'/')[-1]
-        yield self.feed_similar_ajax(contest_id)
+        if self.similar_max > 0:
+            contest_id = response.url.split(r'/')[-1]
+            yield self.feed_similar_ajax(contest_id)
 
     def feed_similar_ajax(self, contest_id, offset=0):
         formdata = {
