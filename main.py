@@ -15,8 +15,7 @@ ajaxcount = 200
 process = CrawlerProcess({'ITEM_PIPELINES': {
     'pipelines.DupePipeline': 300,
     'pipelines.ToRedisPipeline': 400,
-}, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish', 'CONCURRENT_REQUESTS': '32'})
-
+}, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish', 'CONCURRENT_REQUESTS': '200'})
 
 process.crawl(ProductSpider, username=username, password=password, ajaxcount=66,
               tabs={'Latest': 'tabbed_feed_latest'})

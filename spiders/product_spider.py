@@ -105,6 +105,9 @@ class ProductSpider(scrapy.Spider):
                 item['url'] = url
                 yield item
 
+            if next_offset >= 10000:
+                no_more_items = True
+
             if not no_more_items:
                 self.log('feed tab ajax:{}, offset:{}'.format(response.meta['tabname'], next_offset), logging.INFO)
                 yield self.feed_tab_ajax(response.meta['xsrf'], response.meta['tabname'], response.meta['tabid'],
