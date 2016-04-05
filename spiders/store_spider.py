@@ -15,21 +15,27 @@ class StoreSpider(RedisSpider):
     name = "store"
     allowed_domains = ["wish.com"]
     start_urls = (
-        'http://www.wish.com/',
+        'https://www.wish.com/',
     )
 
     merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
 
     def __init__(self, username, password, redis_key='merchants', product_rating_count=1000, product_rating_score=4.0,
                  product_rating_min_count=100,
-                 ajaxcount=200):
+                 ajaxcount=200, filter=None):
         self.username = username
         self.password = password
         self.redis_key = redis_key
-        self.rating_count = product_rating_count
-        self.rating_score = product_rating_score
         self.rating_min_count = product_rating_min_count
         self.ajaxcount = ajaxcount
+
+        if filter is None:
+            self.filter = lambda product: product['product_rating']['rating_count'] >= product_rating_count and \
+                                          product['product_rating'][
+                                              'rating'] >= product_rating_score
+        else:
+            self.filter = filter
+
         self.logon = False
         self.xsrf = ''
 
@@ -86,21 +92,20 @@ class StoreSpider(RedisSpider):
                 ids.append(product.get('id'))
                 url = product.get('external_url')
 
-                product_rating = product['product_rating']
-
                 # self.log('product:{}, count:{}, score:{}'.format(product['id'], product_rating['rating_count'],
                 #                                                  product_rating[
                 #                                                      'rating']), logging.INFO)
 
-                if product_rating['rating_count'] < self.rating_min_count:
+                if product['product_rating']['rating_count'] < self.rating_min_count:
                     ids = []
                     break
 
-                if product_rating['rating_count'] >= self.rating_count and product_rating[
-                    'rating'] >= self.rating_score:
+                if self.filter(product):
                     self.log('found product:{}, count:{}, rating:{}, merchant:{}'.format(url,
-                                                                                         product_rating['rating_count'],
-                                                                                         product_rating['rating'],
+                                                                                         product['product_rating'][
+                                                                                             'rating_count'],
+                                                                                         product['product_rating'][
+                                                                                             'rating'],
                                                                                          merchant_name),
                              logging.INFO)
                     item = items.ExcellentProductItem()
@@ -148,21 +153,20 @@ class StoreSpider(RedisSpider):
                 ids.append(product.get('id'))
                 url = product.get('external_url')
 
-                product_rating = product['product_rating']
-
                 # self.log('product:{}, count:{}, score:{}'.format(product['id'], product_rating['rating_count'],
                 #                                                  product_rating[
                 #                                                      'rating']), logging.INFO)
 
-                if product_rating['rating_count'] < self.rating_min_count:
+                if product['product_rating']['rating_count'] < self.rating_min_count:
                     ids = []
                     break
 
-                if product_rating['rating_count'] >= self.rating_count and product_rating[
-                    'rating'] >= self.rating_score:
+                if self.filter(product):
                     self.log('found product:{}, count:{}, rating:{}, merchant:{}'.format(url,
-                                                                                         product_rating['rating_count'],
-                                                                                         product_rating['rating'],
+                                                                                         product['product_rating'][
+                                                                                             'rating_count'],
+                                                                                         product['product_rating'][
+                                                                                             'rating'],
                                                                                          merchant_name),
                              logging.INFO)
                     item = items.ExcellentProductItem()

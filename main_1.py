@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
+
 from scrapy.crawler import CrawlerProcess
 
 from spiders.merchant_spider import MerchantSpider
 from spiders.product_spider import ProductSpider
 from spiders.store_spider import StoreSpider
-
 
 if __name__ == '__main__':
 
@@ -15,10 +16,14 @@ if __name__ == '__main__':
     #
     # crawl tab product
     #
+
+    from scrapy import optional_features
+    optional_features.remove('boto')
+
     process = CrawlerProcess({'ITEM_PIPELINES': {
         'pipelines.DupePipeline': 300,
         'pipelines.ToRedisPipeline': 400,
-    }, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish', 'CONCURRENT_REQUESTS': '200'})
+    }, 'LOG_LEVEL': 'INFO', 'LOG_FILE': 'target/log.multiwish.1', 'CONCURRENT_REQUESTS': '200'})
 
     process.crawl(ProductSpider, username=username, password=password, ajaxcount=66,
                   tabs={'Latest': 'tabbed_feed_latest'})
@@ -41,17 +46,40 @@ if __name__ == '__main__':
     #
     # crawl excellent merchant
     #
-    for i in range(0, 100):
-        process.crawl(MerchantSpider, username=username, password=password, redis_key='{}:url'.format(ProductSpider.name),
-                      merchant_rating_count=10000, merchant_rating_score=4.0, product_similar_max=0,
-                      product_similar_rating_score=4.0, product_similar_rating_count=500,
+    for i in range(0, 10):
+        process.crawl(MerchantSpider, username=username, password=password,
+                      redis_key='{}:url'.format(ProductSpider.name),
+                      merchant_rating_count=100, merchant_rating_score=3.0, product_similar_max=1000,
+                      product_similar_rating_score=2.0, product_similar_rating_count=20,
                       ajaxcount=ajaxcount)
+
 
     #
     # crawl excellent product
     #
+    def filter(product):
+        price = product['commerce_product_info']['variations'][0]['localized_price'][
+            'localized_value']
+
+        cp = 10
+        symbol = product['commerce_product_info']['variations'][0]['localized_price']['symbol']
+        if symbol != '$':
+            cp = 10 * 6.46
+
+        rating_count = product['product_rating']['rating_count']
+
+        rating_score = product['product_rating']['rating']
+
+        if float(price) > cp and rating_count >= 100 and rating_score >= 4.0:
+            print '{} {} {} {}{}'.format(product['external_url'], rating_count, rating_score, price, symbol)
+            return True
+        else:
+            return False
+
+
     process.crawl(StoreSpider, username=username, password=password, redis_key='{}:url'.format(MerchantSpider.name),
-                  product_rating_count=1000, product_rating_score=4.0, product_rating_min_count=100,
-                  ajaxcount=ajaxcount)
+                  product_rating_count=100, product_rating_score=4.0, product_rating_min_count=20,
+                  ajaxcount=ajaxcount,
+                  filter=filter)
 
     process.start()  # the script will block here until all crawling jobs are finished

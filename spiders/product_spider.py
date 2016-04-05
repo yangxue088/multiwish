@@ -14,7 +14,7 @@ class ProductSpider(scrapy.Spider):
     name = "product"
     allowed_domains = ["wish.com"]
     start_urls = (
-        'http://www.wish.com/',
+        'https://www.wish.com/',
     )
 
     urls = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)

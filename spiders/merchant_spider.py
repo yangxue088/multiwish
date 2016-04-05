@@ -15,7 +15,7 @@ class MerchantSpider(RedisSpider):
     name = "merchant"
     allowed_domains = ["wish.com"]
     start_urls = (
-        'http://www.wish.com/',
+        'https://www.wish.com/',
     )
 
     merchants = ScalableBloomFilter(mode=ScalableBloomFilter.LARGE_SET_GROWTH)
